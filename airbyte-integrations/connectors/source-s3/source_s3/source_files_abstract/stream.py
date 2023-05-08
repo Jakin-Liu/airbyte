@@ -146,7 +146,9 @@ class FileStream(Stream, ABC):
         :param file_infos: filepath_iterator(), this is a param rather than method reference in order to unit test this
         :yield: FileInfo object to use in StorageFile(), if matching on user-provided path patterns
         """
+        print('pattern_matched_filepath_iterator--->>>>>>', file_infos)
         for file_info in file_infos:
+            print('pattern_matched_filepath_iterator************8', file_info)
             if globmatch(file_info.key, self._path_pattern, flags=GLOBSTAR | SPLIT):
                 yield file_info
 

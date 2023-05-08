@@ -1,10 +1,11 @@
 #
 # Copyright (c) 2022 Airbyte, Inc., all rights reserved.
 #
-
+import io
 import logging
 from typing import Any, BinaryIO, Iterator, Mapping, TextIO, Union
 
+import pandas as pd
 import pyarrow as pa
 from pyarrow import ArrowNotImplementedError
 from pyarrow import json as pa_json
@@ -26,6 +27,7 @@ class JsonlParser(AbstractFileParser):
         "object": (
             "struct",
             "large_string",
+            "dict"
         ),
         # TODO: support array type rather than coercing to string
         "array": (
@@ -99,8 +101,12 @@ class JsonlParser(AbstractFileParser):
                 return str(type_)
             raise Exception(f"Unknown PyArrow Type: {type_}")
 
-        table = self._read_table(file)
-        schema_dict = {field.name: field_type_to_str(field.type) for field in table.schema}
+        print('file===>>>>>>>', file)
+
+        # table = self._read_table(file)
+        # table = pd.read_json(file)
+        # schema_dict = {field.name: field_type_to_str(field.type) for field in table.schema}
+        schema_dict = self._read_schema_type(file)
         return self.json_schema_to_pyarrow_schema(schema_dict, reverse=True)
 
     def stream_records(self, file: Union[TextIO, BinaryIO], file_info: FileInfo) -> Iterator[Mapping[str, Any]]:
@@ -108,5 +114,34 @@ class JsonlParser(AbstractFileParser):
         https://arrow.apache.org/docs/python/generated/pyarrow.json.read_json.html
 
         """
-        table = self._read_table(file, self._master_schema)
-        yield from table.to_pylist()
+        # table = self._read_table(file, self._master_schema)
+        # yield from table.to_pylist()
+        json_str = ''
+        with file as fout:
+            for line in fout:
+                json_str += line.decode('utf-8').strip()
+        df = pd.read_json(json_str, typ='series', orient='index')
+        print([df.to_dict()])
+        yield from [df.to_dict()]
+
+    def _read_schema_type(self, file: Union[TextIO, BinaryIO]):
+
+        def convert_dtype(col):
+            if pd.api.types.is_object_dtype(col.dtype):
+                return 'dict' if isinstance(col.iloc[0], dict) else 'list'
+            else:
+                return col.dtype.name
+
+        data = {}
+        json_str = ''
+        with file as fout:
+            for line in fout:
+                json_str += line.decode('utf-8').strip()
+        df = pd.read_json(json_str, lines=True)
+
+        print('_read_schema_type----->>>>>>>>>>>>>>>', df)
+        # 查看每列的数据类型
+        for column in df.columns:
+            print('=====>>>>>>df.columns', column)
+            data[column] = convert_dtype(df[column])
+        return data

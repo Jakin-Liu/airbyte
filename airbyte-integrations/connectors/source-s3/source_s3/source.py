@@ -58,7 +58,9 @@ class SourceS3(SourceFilesAbstract):
     documentation_url = "https://docs.airbyte.com/integrations/sources/s3"
 
     def read_config(self, config_path: str) -> Mapping[str, Any]:
+        print('config_path------->>>>>>', config_path)
         config: Mapping[str, Any] = super().read_config(config_path)
+        print('SourceS3-->>>>>', config)
         if config.get("format", {}).get("delimiter") == r"\t":
             config["format"]["delimiter"] = "\t"
         return config
