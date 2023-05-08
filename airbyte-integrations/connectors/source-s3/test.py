@@ -32,8 +32,8 @@ if __name__ == '__main__':
     import pandas as pd
     import json
 
-    aws_access_key_id = 'AKIATXCDS4PBOK26MY7P'
-    aws_secret_access_key = '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'
+    aws_access_key_id = ''
+    aws_secret_access_key = ''
     bucket = 'fp-meidong'
     key_path = 'mch_test4/test_pandas.json'
 
